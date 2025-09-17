@@ -1,9 +1,69 @@
 <!doctype html>
-<html>
-    <body>
-        <img src="swish.png" alt="">
-        <h1>
-            🥀🥀🥀🥀
-        </h1>
-    </body>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Firebase Shared Counter</title>
+    <script type="module">
+      // Import Firebase
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+      import { getDatabase, ref, get, set, onValue, runTransaction } 
+        from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+      // 🔹 Replace this with your Firebase config
+      const firebaseConfig = {
+        apiKey: "AIzaSyDyFxHLRFtY7NoddH5WCs8M1Q3DCm06rcU",
+        authDomain: "coolforsaljning.firebaseapp.com",
+        databaseURL: "https://coolforsaljning-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "coolforsaljning",
+        storageBucket: "coolforsaljning.firebasestorage.app",
+        messagingSenderId: "347896271740",
+        appId: "1:347896271740:web:eae95f1932f79535788af9"
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      const counterRef = ref(db, "counter");
+
+      // Update the counter on the page whenever it changes in Firebase
+      onValue(counterRef, (snapshot) => {
+        const value = snapshot.val() ?? 0;
+        document.getElementById("counter").textContent = value;
+      });
+
+      // Change counter (add or subtract)
+      window.changeCounter = (amount) => {
+        runTransaction(counterRef, (currentValue) => {
+          return (currentValue || 0) + amount;
+        });
+      };
+    </script>
+    <style>
+      body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+      h1 { font-size: 2rem; }
+      button { margin: 5px; padding: 10px 20px; font-size: 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>pengar: <span id="counter">0</span></h1>
+
+    <div>
+      <h2></h2>
+      <button onclick="changeCounter(10)">+10</button>
+      <button onclick="changeCounter(20)">+20</button>
+      <button onclick="changeCounter(30)">+30</button>
+      <button onclick="changeCounter(40)">+40</button>
+      <button onclick="changeCounter(50)">+50</button>
+    </div>
+    <e>(om ni säljer något, så lägg till hur mycket ni sålde för liksom)</e>
+    <div>
+      <h2></h2>
+      <button onclick="changeCounter(-10)">-10</button>
+      <button onclick="changeCounter(-20)">-20</button>
+      <button onclick="changeCounter(-30)">-30</button>
+      <button onclick="changeCounter(-40)">-40</button>
+      <button onclick="changeCounter(-50)">-50</button>
+    </div>
+    <img src="swish.png">
+  </body>
 </html>
