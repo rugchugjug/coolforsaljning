@@ -180,15 +180,20 @@ window.changeCounter = (amount) => {
     }
   });
 };
-    // 🔹 Reset counter (admins only)
-    window.resetCounter = () => {
-      const user = auth.currentUser;
-      if (!user || !admins.includes(user.email)) {
-        alert("Only admins can reset!");
-        return;
-      }
-      runTransaction(counterRef, () => 0);
-    };
+    // 🔹 Reset counter + all user totals (admins only)
+window.resetCounter = () => {
+  const user = auth.currentUser;
+  if (!user || !admins.includes(user.email)) {
+    alert("Only admins can reset!");
+    return;
+  }
+
+  // Reset the global counter
+  runTransaction(counterRef, () => 0);
+
+  // Reset all user totals
+  set(userTotalsRef, {}); // clears the whole leaderboard
+};
   </script>
 </body>
 </html>
