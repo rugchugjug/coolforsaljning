@@ -64,12 +64,6 @@
     <button onclick="changeCounter(-100)">-100</button>
   </div>
 
-  <!-- 🔹 Action log -->
-  <div class="group">
-    <h2>Action Log (last 10)</h2>
-    <ul id="log"></ul>
-  </div>
-
   <!-- 🔹 Leaderboard -->
   <div id="userTotalsBox">
     <h2>User Totals</h2>
@@ -103,7 +97,6 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
     const counterRef = ref(db, "counter");
-    const logRef = ref(db, "log");
     const userTotalsRef = ref(db, "userTotals");
 
     // Admins
@@ -137,26 +130,6 @@
       document.getElementById("counter").textContent = value;
     });
 
-    // 🔹 Show action log (last 10)
-    onValue(logRef, (snapshot) => {
-      const logs = snapshot.val();
-      const logList = document.getElementById("log");
-      logList.innerHTML = "";
-
-      if (logs) {
-        const entries = Object.values(logs)
-          .sort((a, b) => b.time - a.time)
-          .slice(0, 10);
-
-        entries.forEach((entry) => {
-          const li = document.createElement("li");
-          const date = new Date(entry.time).toLocaleString();
-          li.textContent = `${date}: ${entry.amount > 0 ? "+" : ""}${entry.amount} by ${entry.user || "Anonymous"}`;
-          logList.appendChild(li);
-        });
-      }
-    });
-
     // 🔹 Show leaderboard
     onValue(userTotalsRef, (snapshot) => {
       const users = snapshot.val() || {};
@@ -172,11 +145,11 @@
       });
     });
 
-    // 🔹 Change counter and log
+    // 🔹 Change counter and update leaderboard
     window.changeCounter = (amount) => {
       const user = auth.currentUser;
       if (!user) {
-        alert("You must be signed in to change the counter!");
+        alert("logga in bro");
         return;
       }
 
@@ -192,14 +165,6 @@
           return { name: user.displayName, total: Math.max(0, (current.total || 0) + amount) };
         }
       });
-
-      // Log entry
-      push(logRef, {
-        amount: amount,
-        time: Date.now(),
-        user: user.displayName,
-        email: user.email
-      });
     };
 
     // 🔹 Reset counter (admins only)
@@ -209,16 +174,7 @@
         alert("Only admins can reset!");
         return;
       }
-
       runTransaction(counterRef, () => 0);
-
-      push(logRef, {
-        amount: 0,
-        time: Date.now(),
-        user: user.displayName,
-        email: user.email,
-        action: "reset"
-      });
     };
   </script>
 </body>
