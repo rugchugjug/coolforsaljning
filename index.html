@@ -14,7 +14,7 @@
       left: 20px;
       top: 100px;
       text-align: left;
-      background:pms333;
+      background: #1ABEBB;
       padding: 10px;
       border-radius: 6px;
     }
@@ -74,35 +74,8 @@
 
   <!-- 🔹 Firebase Script -->
   <script type="module">
-    // 🔹 Show leaderboard
-onValue(userTotalsRef, (snapshot) => {
-  const users = snapshot.val() || {};
-  const userLogList = document.getElementById("userLog");
-  userLogList.innerHTML = "";
-
-  const sortedUsers = Object.values(users).sort((a, b) => b.total - a.total);
-
-  sortedUsers.forEach((entry, index) => {
-    let displayName = entry.name || "Unknown";
-
-    // Split name into parts (first, last, etc.)
-    const parts = displayName.trim().split(" ");
-    if (parts.length > 1) {
-      // First name + first letter of surname
-      displayName = `${parts[0]} ${parts[1][0]}.`;
-    } else {
-      // Only first name
-      displayName = parts[0];
-    }
-
-    const li = document.createElement("li");
-    li.textContent = `${index + 1}. ${displayName} — ${entry.total}`;
-    userLogList.appendChild(li);
-  });s
-});
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getDatabase, ref, onValue, runTransaction, push } 
+    import { getDatabase, ref, onValue, runTransaction } 
       from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
       from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
@@ -166,8 +139,18 @@ onValue(userTotalsRef, (snapshot) => {
       const sortedUsers = Object.values(users).sort((a, b) => b.total - a.total);
 
       sortedUsers.forEach((entry, index) => {
+        let displayName = entry.name || "Unknown";
+
+        // shorten to first name + first letter of surname
+        const parts = displayName.trim().split(" ");
+        if (parts.length > 1) {
+          displayName = `${parts[0]} ${parts[1][0]}.`;
+        } else {
+          displayName = parts[0];
+        }
+
         const li = document.createElement("li");
-        li.textContent = `${index + 1}. ${entry.name} — ${entry.total}`;
+        li.textContent = `${index + 1}. ${displayName} — ${entry.total}`;
         userLogList.appendChild(li);
       });
     });
