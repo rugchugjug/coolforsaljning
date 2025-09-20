@@ -155,28 +155,31 @@
       });
     });
 
-    // 🔹 Change counter and update leaderboard
-    window.changeCounter = (amount) => {
-      const user = auth.currentUser;
-      if (!user) {
-        alert("logga in bro");
-        return;
-      }
+// 🔹 Change counter and update leaderboard
+window.changeCounter = (amount) => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("logga in bro");
+    return;
+  }
 
-      // Global counter
-      runTransaction(counterRef, (currentValue) => (currentValue || 0) + amount);
+  // Global counter (make sure it can't go negative)
+  runTransaction(counterRef, (currentValue) => {
+    const newValue = (currentValue || 0) + amount;
+    return newValue < 0 ? 0 : newValue;
+  });
 
-      // User total
-      const userTotalRef = ref(db, "userTotals/" + user.uid);
-      runTransaction(userTotalRef, (current) => {
-        if (!current) {
-          return { name: user.displayName, total: Math.max(0, amount) };
-        } else {
-          return { name: user.displayName, total: Math.max(0, (current.total || 0) + amount) };
-        }
-      });
-    };
-
+  // User total (also can't go negative)
+  const userTotalRef = ref(db, "userTotals/" + user.uid);
+  runTransaction(userTotalRef, (current) => {
+    if (!current) {
+      return { name: user.displayName, total: Math.max(0, amount) };
+    } else {
+      const newTotal = (current.total || 0) + amount;
+      return { name: user.displayName, total: newTotal < 0 ? 0 : newTotal };
+    }
+  });
+};
     // 🔹 Reset counter (admins only)
     window.resetCounter = () => {
       const user = auth.currentUser;
