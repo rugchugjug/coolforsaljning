@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Firebase Shared Counter</title>
+  <title>skibidi cool försäljning</title>
 
   <style>
     body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
@@ -14,7 +14,7 @@
       left: 20px;
       top: 100px;
       text-align: left;
-      background: #f8f8f8;
+      background:pms333;
       padding: 10px;
       border-radius: 6px;
     }
@@ -74,6 +74,33 @@
 
   <!-- 🔹 Firebase Script -->
   <script type="module">
+    // 🔹 Show leaderboard
+onValue(userTotalsRef, (snapshot) => {
+  const users = snapshot.val() || {};
+  const userLogList = document.getElementById("userLog");
+  userLogList.innerHTML = "";
+
+  const sortedUsers = Object.values(users).sort((a, b) => b.total - a.total);
+
+  sortedUsers.forEach((entry, index) => {
+    let displayName = entry.name || "Unknown";
+
+    // Split name into parts (first, last, etc.)
+    const parts = displayName.trim().split(" ");
+    if (parts.length > 1) {
+      // First name + first letter of surname
+      displayName = `${parts[0]} ${parts[1][0]}.`;
+    } else {
+      // Only first name
+      displayName = parts[0];
+    }
+
+    const li = document.createElement("li");
+    li.textContent = `${index + 1}. ${displayName} — ${entry.total}`;
+    userLogList.appendChild(li);
+  });s
+});
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getDatabase, ref, onValue, runTransaction, push } 
       from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
