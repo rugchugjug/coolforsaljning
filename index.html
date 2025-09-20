@@ -4,6 +4,65 @@
   <meta charset="utf-8">
   <title>Firebase Shared Counter</title>
   <script type="module">
+    <div style="position: absolute; left: 20px; top: 100px; text-align: left;">
+    <h2>User Totals</h2>
+    <ul id="userLog"></ul>
+    </div>
+    window.changeCounter = (amount) => {
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("You must be signed in to change the counter!");
+    return;
+  }
+
+  // 🔹 Update global counter
+  runTransaction(counterRef, (currentValue) => {
+    return (currentValue || 0) + amount;
+  });
+
+  // 🔹 Update this user's personal total
+  const userTotalRef = ref(db, "userTotals/" + user.uid);
+
+  runTransaction(userTotalRef, (current) => {
+    if (!current) {
+      // First time this user presses a button
+      return {
+        name: user.displayName,
+        total: Math.max(0, amount)  // don't go below 0
+      };
+    } else {
+      return {
+        name: user.displayName,
+        total: Math.max(0, (current.total || 0) + amount)
+      };
+    }
+  });
+
+  // 🔹 (Optional) still log the action for history
+  push(logRef, {
+    amount: amount,
+    time: Date.now(),
+    user: user.displayName,
+    email: user.email
+  });
+};
+
+const userTotalsRef = ref(db, "userTotals");
+onValue(userTotalsRef, (snapshot) => {
+  const users = snapshot.val() || {};
+  const userLogList = document.getElementById("userLog");
+  userLogList.innerHTML = "";
+
+  // Convert object → array and sort by total (highest first)
+  const sortedUsers = Object.values(users).sort((a, b) => b.total - a.total);
+
+  sortedUsers.forEach((entry, index) => {
+    const li = document.createElement("li");
+    li.textContent = `${index + 1}. ${entry.name} — ${entry.total}`;
+    userLogList.appendChild(li);
+  });
+});
     // Change counter (add/subtract) AND log it
 window.changeCounter = (amount) => {
   const user = auth.currentUser;
@@ -193,6 +252,9 @@ window.resetCounter = () => {
   <p id="status">Not signed in</p>
   <button onclick="signIn()">Sign in with Google</button>
   <button onclick="signOutUser()">Sign out</button>
+  <div>
+  <e>(använd inte era skol konton btw, det är blockat)</e>
+  </div>
 
   <!-- 🔹 Counter display -->
   <h1>pengar: <span id="counter">0</span></h1>
