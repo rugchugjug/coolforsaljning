@@ -5,18 +5,28 @@
   <title>skibidi cool försäljning</title>
 
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background: #1ABEBB; }
     h1 { font-size: 2rem; }
-    button { margin: 5px; padding: 10px 20px; font-size: 1rem; }
+    button { margin: 5px; padding: 10px 20px; font-size: 1rem; cursor: pointer; }
     ul { list-style: none; padding: 0; }
     #userTotalsBox {
       position: absolute;
       left: 20px;
       top: 100px;
       text-align: left;
-      background: #1ABEBB;
+      background: white;
       padding: 10px;
       border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    #userTotalsBox button {
+      font-size: 0.8rem;
+      padding: 3px 6px;
+      margin-left: 10px;
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 4px;
     }
   </style>
 </head>
@@ -130,15 +140,16 @@
       document.getElementById("counter").textContent = value;
     });
 
-    // 🔹 Show leaderboard
+    // 🔹 Show leaderboard with delete option for admins
     onValue(userTotalsRef, (snapshot) => {
       const users = snapshot.val() || {};
       const userLogList = document.getElementById("userLog");
       userLogList.innerHTML = "";
 
-      const sortedUsers = Object.values(users).sort((a, b) => b.total - a.total);
+      const sortedUsers = Object.entries(users)
+        .sort(([, a], [, b]) => b.total - a.total);
 
-      sortedUsers.forEach((entry, index) => {
+      sortedUsers.forEach(([uid, entry], index) => {
         let displayName = entry.name || "Unknown";
 
         // shorten to first name + first letter of surname
@@ -151,6 +162,21 @@
 
         const li = document.createElement("li");
         li.textContent = `${index + 1}. ${displayName} — ${entry.total}`;
+
+        // 🔹 Add delete button if admin
+        const currentUser = auth.currentUser;
+        if (currentUser && admins.includes(currentUser.email)) {
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "X";
+          delBtn.onclick = () => {
+            if (confirm(`Delete ${displayName} from leaderboard?`)) {
+              const userRef = ref(db, "userTotals/" + uid);
+              set(userRef, null); // removes the user
+            }
+          };
+          li.appendChild(delBtn);
+        }
+
         userLogList.appendChild(li);
       });
     });
@@ -181,7 +207,7 @@
       });
     };
 
-    // 🔹 Reset counter + set all user totals to 0 (admins only)
+    // 🔹 Reset counter + all user totals (admins only)
     window.resetCounter = () => {
       const user = auth.currentUser;
       if (!user || !admins.includes(user.email)) {
@@ -192,14 +218,8 @@
       // Reset the global counter
       runTransaction(counterRef, () => 0);
 
-      // Reset all user totals to 0 (keep users in leaderboard)
-      onValue(userTotalsRef, (snapshot) => {
-        const users = snapshot.val() || {};
-        Object.keys(users).forEach((uid) => {
-          const userTotalRef = ref(db, "userTotals/" + uid + "/total");
-          set(userTotalRef, 0);
-        });
-      }, { onlyOnce: true });
+      // Reset all user totals
+      set(userTotalsRef, {}); // clears the whole leaderboard
     };
   </script>
 </body>
