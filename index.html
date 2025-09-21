@@ -81,6 +81,7 @@
   </div>
 
   <img src="swish.png" alt="Swish QR">
+  <div><h1>köp eller bli strypt btw</h1></div>
 
   <!-- 🔹 Firebase Script -->
   <script type="module">
@@ -169,7 +170,7 @@
           const delBtn = document.createElement("button");
           delBtn.textContent = "💔";
           delBtn.onclick = () => {
-            if (confirm(`Delete ${displayName} from leaderboard?`)) {
+            if (confirm(`Ta bort ${displayName} din sussy baka?`)) {
               const userRef = ref(db, "userTotals/" + uid);
               set(userRef, null); // removes the user
             }
