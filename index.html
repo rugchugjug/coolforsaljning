@@ -66,7 +66,7 @@
 
   <!-- 🔹 Leaderboard -->
   <div id="userTotalsBox">
-    <h2>User Totals</h2>
+    <h2>LEADERBOARD🔥🔥🔥</h2>
     <ul id="userLog"></ul>
   </div>
 
@@ -75,7 +75,7 @@
   <!-- 🔹 Firebase Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getDatabase, ref, onValue, runTransaction } 
+    import { getDatabase, ref, onValue, runTransaction, set } 
       from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
       from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
@@ -155,45 +155,52 @@
       });
     });
 
-// 🔹 Change counter and update leaderboard
-window.changeCounter = (amount) => {
-  const user = auth.currentUser;
-  if (!user) {
-    alert("logga in bro");
-    return;
-  }
+    // 🔹 Change counter and update leaderboard
+    window.changeCounter = (amount) => {
+      const user = auth.currentUser;
+      if (!user) {
+        alert("logga in bro");
+        return;
+      }
 
-  // Global counter (make sure it can't go negative)
-  runTransaction(counterRef, (currentValue) => {
-    const newValue = (currentValue || 0) + amount;
-    return newValue < 0 ? 0 : newValue;
-  });
+      // Global counter (make sure it can't go negative)
+      runTransaction(counterRef, (currentValue) => {
+        const newValue = (currentValue || 0) + amount;
+        return newValue < 0 ? 0 : newValue;
+      });
 
-  // User total (also can't go negative)
-  const userTotalRef = ref(db, "userTotals/" + user.uid);
-  runTransaction(userTotalRef, (current) => {
-    if (!current) {
-      return { name: user.displayName, total: Math.max(0, amount) };
-    } else {
-      const newTotal = (current.total || 0) + amount;
-      return { name: user.displayName, total: newTotal < 0 ? 0 : newTotal };
-    }
-  });
-};
-    // 🔹 Reset counter + all user totals (admins only)
-window.resetCounter = () => {
-  const user = auth.currentUser;
-  if (!user || !admins.includes(user.email)) {
-    alert("Only admins can reset!");
-    return;
-  }
+      // User total (also can't go negative)
+      const userTotalRef = ref(db, "userTotals/" + user.uid);
+      runTransaction(userTotalRef, (current) => {
+        if (!current) {
+          return { name: user.displayName, total: Math.max(0, amount) };
+        } else {
+          const newTotal = (current.total || 0) + amount;
+          return { name: user.displayName, total: newTotal < 0 ? 0 : newTotal };
+        }
+      });
+    };
 
-  // Reset the global counter
-  runTransaction(counterRef, () => 0);
+    // 🔹 Reset counter + set all user totals to 0 (admins only)
+    window.resetCounter = () => {
+      const user = auth.currentUser;
+      if (!user || !admins.includes(user.email)) {
+        alert("Only admins can reset!");
+        return;
+      }
 
-  // Reset all user totals
-  set(userTotalsRef, {}); // clears the whole leaderboard
-};
+      // Reset the global counter
+      runTransaction(counterRef, () => 0);
+
+      // Reset all user totals to 0 (keep users in leaderboard)
+      onValue(userTotalsRef, (snapshot) => {
+        const users = snapshot.val() || {};
+        Object.keys(users).forEach((uid) => {
+          const userTotalRef = ref(db, "userTotals/" + uid + "/total");
+          set(userTotalRef, 0);
+        });
+      }, { onlyOnce: true });
+    };
   </script>
 </body>
 </html>
