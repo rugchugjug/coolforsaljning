@@ -167,7 +167,7 @@
         const currentUser = auth.currentUser;
         if (currentUser && admins.includes(currentUser.email)) {
           const delBtn = document.createElement("button");
-          delBtn.textContent = "X";
+          delBtn.textContent = "💔";
           delBtn.onclick = () => {
             if (confirm(`Delete ${displayName} from leaderboard?`)) {
               const userRef = ref(db, "userTotals/" + uid);
