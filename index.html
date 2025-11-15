@@ -1,14 +1,236 @@
 <!doctype html>
-<html>
-    <body>
-        <div>
-             <p>Pengar</p>
-            <span id="number" data-value="123">0</span> 
-        </div>
-        
-        <img src="swish.png" alt="">
-        <h1>
-            rahhhhh
-        </h1>
-    </body>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>skibidi cool försäljning</title>
+
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background: #1ABEBB; }
+    h1 { font-size: 2rem; }
+    button { margin: 5px; padding: 10px 20px; font-size: 1rem; }
+    ul { list-style: none; padding: 0; }
+    #userTotalsBox {
+      position: absolute;
+      left: 20px;
+      top: 100px;
+      text-align: left;
+      background: white;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .deleteBtn {
+      margin-left: 10px;
+      color: red;
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 🔹 Reset button -->
+  <button id="resetBtn" onclick="resetCounter()" style="display:none;">Nollställ</button>
+
+  <!-- 🔹 Google sign-in -->
+  <p id="status">Not signed in</p>
+  <button onclick="signIn()">Sign in with Google</button>
+  <button onclick="signOutUser()">Sign out</button>
+  <p><em>(använd inte era skol konton btw, det är blockat)</em></p>
+
+  <!-- 🔹 Counter display -->
+  <h1>pengar: <span id="counter">0</span></h1>
+
+  <!-- 🔹 Add buttons -->
+  <div>
+    <button onclick="changeCounter(10)">+10</button>
+    <button onclick="changeCounter(20)">+20</button>
+    <button onclick="changeCounter(30)">+30</button>
+    <button onclick="changeCounter(40)">+40</button>
+    <button onclick="changeCounter(50)">+50</button>
+    <button onclick="changeCounter(60)">+60</button>
+    <button onclick="changeCounter(70)">+70</button>
+    <button onclick="changeCounter(80)">+80</button>
+    <button onclick="changeCounter(90)">+90</button>
+    <button onclick="changeCounter(100)">+100</button>
+    <button onclick="changeCounter(100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000)">+100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</button>
+  </div>
+
+  <p>(om ni säljer något, så lägg till hur mycket ni sålde för, liksom)</p>
+
+  <!-- 🔹 Subtract buttons -->
+  <div>
+    <button onclick="changeCounter(-10)">-10</button>
+    <button onclick="changeCounter(-20)">-20</button>
+    <button onclick="changeCounter(-30)">-30</button>
+    <button onclick="changeCounter(-40)">-40</button>
+    <button onclick="changeCounter(-50)">-50</button>
+    <button onclick="changeCounter(-60)">-60</button>
+    <button onclick="changeCounter(-70)">-70</button>
+    <button onclick="changeCounter(-80)">-80</button>
+    <button onclick="changeCounter(-90)">-90</button>
+    <button onclick="changeCounter(-100)">-100</button>
+  </div>
+
+  <!-- 🔹 Leaderboard -->
+  <div id="userTotalsBox">
+    <h2>LEADERBOARD🔥🔥🔥</h2>
+    <ul id="userLog"></ul>
+  </div>
+
+  <img src="swish.png" alt="Swish QR">
+
+  <!-- 🔹 Firebase Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, onValue, runTransaction, set, get, child } 
+      from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
+      from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+    // 🔹 Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyFxHLRFtY7NoddH5WCs8M1Q3DCm06rcU",
+      authDomain: "coolforsaljning.firebaseapp.com",
+      databaseURL: "https://coolforsaljning-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "coolforsaljning",
+      storageBucket: "coolforsaljning.firebasestorage.app",
+      messagingSenderId: "347896271740",
+      appId: "1:347896271740:web:eae95f1932f79535788af9"
+    };
+
+    // 🔹 Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    const counterRef = ref(db, "counter");
+    const userTotalsRef = ref(db, "userTotals");
+
+    let isAdmin = false;
+
+    // 🔹 Sign in / out
+    window.signIn = () => {
+      signInWithPopup(auth, provider).catch((error) => {
+        console.error("Sign-in error:", error);
+      });
+    };
+    window.signOutUser = () => signOut(auth);
+
+    // 🔹 Track authentication state
+    onAuthStateChanged(auth, async (user) => {
+      const status = document.getElementById("status");
+      const resetBtn = document.getElementById("resetBtn");
+
+      if (user) {
+        status.textContent = `Signed in as: ${user.displayName} (${user.email})`;
+
+        // check if user is in "admins" node
+        const snapshot = await get(child(ref(db), "admins/" + user.uid));
+        isAdmin = snapshot.exists();
+
+        resetBtn.style.display = isAdmin ? "inline-block" : "none";
+      } else {
+        status.textContent = "Not signed in";
+        resetBtn.style.display = "none";
+        isAdmin = false;
+      }
+    });
+
+    // 🔹 Update counter live
+    onValue(counterRef, (snapshot) => {
+      const value = snapshot.val() ?? 0;
+      document.getElementById("counter").textContent = value;
+    });
+
+    // 🔹 Show leaderboard
+    onValue(userTotalsRef, (snapshot) => {
+      const users = snapshot.val() || {};
+      const userLogList = document.getElementById("userLog");
+      userLogList.innerHTML = "";
+
+      const sorted = Object.entries(users).sort((a, b) => b[1].total - a[1].total);
+
+      sorted.forEach(([uid, entry], index) => {
+        let displayName = entry.name || "Unknown";
+        const parts = displayName.trim().split(" ");
+        if (parts.length > 1) {
+          displayName = `${parts[0]} ${parts[1][0]}.`;
+        } else {
+          displayName = parts[0];
+        }
+
+        const li = document.createElement("li");
+        li.textContent = `${index + 1}. ${displayName} — ${entry.total}`;
+
+        // Add delete button for admins
+        if (isAdmin) {
+          const delBtn = document.createElement("span");
+          delBtn.textContent = "❌";
+          delBtn.className = "deleteBtn";
+          delBtn.onclick = () => deleteUser(uid, displayName);
+          li.appendChild(delBtn);
+        }
+
+        userLogList.appendChild(li);
+      });
+    });
+
+    // 🔹 Change counter and update leaderboard
+    window.changeCounter = (amount) => {
+      const user = auth.currentUser;
+      if (!user) {
+        alert("logga in bro");
+        return;
+      }
+
+      // Global counter (can't go negative)
+      runTransaction(counterRef, (currentValue) => {
+        const newValue = (currentValue || 0) + amount;
+        return newValue < 0 ? 0 : newValue;
+      });
+
+      // User total (can't go negative)
+      const userTotalRef = ref(db, "userTotals/" + user.uid);
+      runTransaction(userTotalRef, (current) => {
+        if (!current) {
+          return { name: user.displayName, total: Math.max(0, amount) };
+        } else {
+          const newTotal = (current.total || 0) + amount;
+          return { name: user.displayName, total: newTotal < 0 ? 0 : newTotal };
+        }
+      });
+    };
+
+    // 🔹 Reset counter + all user totals (admins only)
+    window.resetCounter = () => {
+      if (!auth.currentUser || !isAdmin) {
+        alert("Only admins can reset!");
+        return;
+      }
+
+      runTransaction(counterRef, () => 0);
+
+      // Reset all user totals to 0
+      get(userTotalsRef).then(snapshot => {
+        const updates = {};
+        snapshot.forEach(child => {
+          updates[child.key] = { name: child.val().name, total: 0 };
+        });
+        set(userTotalsRef, updates);
+      });
+    };
+
+    // 🔹 Delete user (admins only)
+    window.deleteUser = (uid, name) => {
+      if (!auth.currentUser || !isAdmin) {
+        alert("Only admins can delete!");
+        return;
+      }
+      if (confirm(`Delete ${name} from leaderboard?`)) {
+        set(ref(db, "userTotals/" + uid), null);
+      }
+    };
+  </script>
+</body>
 </html>
